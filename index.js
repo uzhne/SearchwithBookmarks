@@ -10,11 +10,33 @@ const SEARCH_KEY = "%s";
 
 var foundBookmarkTotal = 0;
 
-var mainMenu = cm.Menu({
-    label: 'Search with Bookmarks',
+const mainMenuLabel = 'Search with Bookmarks';
+const mainMenuOptions = {
+    label: mainMenuLabel,
     context: cm.SelectionContext(),
-    items: [cm.Item({ label: "No searchable bookmark found!", data: "", image: DEFAULT_FAVICON })]
-});
+    contentScript: 'self.on("context", function (node) {' +
+        '  self.postMessage();' +
+        '  return true;' +
+        '});',
+    onMessage: function (message) {
+        // http://stackoverflow.com/a/37805358
+        const moveMenuHack = require('sdk/simple-prefs').prefs['moveMenuHack'];
+        if (moveMenuHack) {
+            const window = getMostRecentBrowserWindow();
+            const searchItem = window.document.getElementById('context-searchselect');
+            const mainMenus = window.document.querySelectorAll('.addon-context-menu-item[label="' + mainMenuLabel + '"]');
+            const mainMenu = mainMenus[0];
+            if (mainMenu === undefined) {
+                return;
+            }
+            mainMenu.parentNode.insertBefore(mainMenu, searchItem.nextSibling);
+        }
+    }
+};
+
+var mainMenu = cm.Menu(Object.assign({
+    items: [cm.Item({label: "No searchable bookmark found!", data: "", image: DEFAULT_FAVICON})]
+}, mainMenuOptions));
 
 tabs.on('ready', function(tab) {
     var contextMenuBuilder = searchBookmarks(SEARCH_KEY);
@@ -69,10 +91,7 @@ function extractDomain(url) {
 
 function buildSubMenu(foundBookmarks) {
     mainMenu.destroy();
-    mainMenu = cm.Menu({
-        label: 'Search with Bookmarks',
-        context: cm.SelectionContext()
-    });
+    mainMenu = cm.Menu(mainMenuOptions);
 
     for (var i = 0; i < foundBookmarks.length; i++) {
         var foundBookmarkDomain = extractDomain(foundBookmarks[i].url);

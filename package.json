@@ -11,6 +11,12 @@
         "name": "openInBackground",
         "value": true,
         "title": "Open search results in a background tab"
+    },
+    {
+        "type": "bool",
+        "name": "moveMenuHack",
+        "value": false,
+        "title": "Move the menu next to built-in search item"
     }
   ],
   "title": "Search with Bookmarks",
